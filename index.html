@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CortexFlow — AI Agent Reasoning Pipeline Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--text:#e0e0f0;--text2:#8888aa;--accent:#7c3aed;--accent2:#a78bfa;--green:#10b981;--orange:#f59e0b;--red:#ef4444;--cyan:#06b6d4;--pink:#ec4899;--blue:#3b82f6}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow-x:hidden;line-height:1.6}
+a{color:var(--accent2);text-decoration:none}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1200px;margin:0 auto}
+.logo{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-weight:400;opacity:.7}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{color:var(--text2);font-size:.9rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{padding:8px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(124,58,237,.4)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 40%,rgba(124,58,237,.08) 0%,transparent 50%),radial-gradient(circle at 70% 60%,rgba(6,182,212,.06) 0%,transparent 50%);animation:heroGlow 20s ease-in-out infinite alternate}
+@keyframes heroGlow{0%{transform:translate(0,0) rotate(0deg)}100%{transform:translate(-5%,5%) rotate(3deg)}}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;line-height:1.1;margin-bottom:24px;position:relative}
+.hero h1 .gradient{background:linear-gradient(135deg,var(--accent),var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:1.2rem;color:var(--text2);max-width:600px;margin:0 auto 40px;position:relative}
+.hero-btns{display:flex;gap:16px;justify-content:center;position:relative;flex-wrap:wrap}
+.btn{padding:14px 32px;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#6d28d9);color:#fff;box-shadow:0 4px 30px rgba(124,58,237,.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(124,58,237,.5)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent)}
+
+/* BADGE */
+.mimo-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:20px;font-size:.8rem;color:var(--accent2);margin-bottom:24px;position:relative}
+.mimo-badge::before{content:'';width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* CANVAS DEMO */
+.canvas-section{padding:80px 0;position:relative}
+.canvas-section h2{text-align:center;font-size:2rem;margin-bottom:12px}
+.canvas-section .subtitle{text-align:center;color:var(--text2);margin-bottom:40px}
+.canvas-container{position:relative;width:100%;max-width:1000px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;aspect-ratio:16/9}
+canvas#pipelineCanvas{width:100%;height:100%;display:block}
+.canvas-controls{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.ctrl-btn{padding:10px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-size:.85rem;transition:all .2s;display:flex;align-items:center;gap:6px}
+.ctrl-btn:hover{border-color:var(--accent);color:var(--accent2)}
+.ctrl-btn.active{background:rgba(124,58,237,.15);border-color:var(--accent);color:var(--accent2)}
+.ctrl-btn .dot{width:8px;height:8px;border-radius:50%}
+.dot-green{background:var(--green)}
+.dot-orange{background:var(--orange)}
+.dot-red{background:var(--red)}
+
+/* STATS BAR */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:60px 0}
+.stat{text-align:center;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:border-color .3s}
+.stat:hover{border-color:var(--accent)}
+.stat .num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .label{color:var(--text2);font-size:.85rem;margin-top:4px}
+
+/* FEATURES */
+.features{padding:80px 0}
+.features h2{text-align:center;font-size:2rem;margin-bottom:12px}
+.features .subtitle{text-align:center;color:var(--text2);margin-bottom:60px}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.feature{padding:32px;background:var(--surface);border:1px solid var(--border);border-radius:14px;transition:all .3s;position:relative;overflow:hidden}
+.feature:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.feature::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--cyan));opacity:0;transition:opacity .3s}
+.feature:hover::before{opacity:1}
+.feature-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:16px}
+.feature h3{font-size:1.1rem;margin-bottom:8px}
+.feature p{color:var(--text2);font-size:.9rem}
+
+/* NODE TYPES */
+.node-types{padding:80px 0}
+.node-types h2{text-align:center;font-size:2rem;margin-bottom:12px}
+.node-types .subtitle{text-align:center;color:var(--text2);margin-bottom:40px}
+.node-showcase{display:flex;gap:16px;overflow-x:auto;padding:20px 0;scrollbar-width:none}
+.node-showcase::-webkit-scrollbar{display:none}
+.node-card{min-width:200px;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;text-align:center;transition:all .3s;flex-shrink:0}
+.node-card:hover{border-color:var(--accent);transform:scale(1.05)}
+.node-card .icon{font-size:2rem;margin-bottom:12px}
+.node-card h4{margin-bottom:4px;font-size:.95rem}
+.node-card p{color:var(--text2);font-size:.8rem}
+
+/* ARCHITECTURE */
+.arch{padding:80px 0}
+.arch h2{text-align:center;font-size:2rem;margin-bottom:40px}
+.arch-diagram{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:800px;margin:0 auto;font-family:'Courier New',monospace;font-size:.85rem;color:var(--cyan);line-height:1.8;white-space:pre;overflow-x:auto}
+
+/* COMPARISON */
+.comparison{padding:80px 0}
+.comparison h2{text-align:center;font-size:2rem;margin-bottom:40px}
+.comp-table{width:100%;max-width:800px;margin:0 auto;border-collapse:collapse}
+.comp-table th,.comp-table td{padding:14px 20px;text-align:left;border-bottom:1px solid var(--border);font-size:.9rem}
+.comp-table th{color:var(--text2);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+.comp-table tr:hover td{background:rgba(124,58,237,.03)}
+.comp-table .check{color:var(--green)}
+.comp-table .cross{color:var(--red);opacity:.5}
+.comp-table .highlight{color:var(--accent2);font-weight:600}
+
+/* FOOTER */
+footer{padding:60px 0 40px;border-top:1px solid var(--border);text-align:center}
+footer .links{display:flex;justify-content:center;gap:32px;margin-bottom:24px;flex-wrap:wrap}
+footer .copy{color:var(--text2);font-size:.85rem}
+
+/* ANIMATIONS */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .6s,transform .6s}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+.nav-links{display:none}
+.stats-bar{grid-template-columns:repeat(2,1fr)}
+.canvas-container{aspect-ratio:4/3}
+.arch-diagram{font-size:.7rem;padding:20px}
+.comp-table th,.comp-table td{padding:10px 12px;font-size:.8rem}
+}
+</style>
+</head>
+<body>
+<nav>
+<div class="inner">
+<div class="logo">Cortex<span>Flow</span></div>
+<ul class="nav-links">
+<li><a href="#demo">Demo</a></li>
+<li><a href="#features">Features</a></li>
+<li><a href="#nodes">Nodes</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#compare">Compare</a></li>
+</ul>
+<button class="nav-cta" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Try Live Demo</button>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div>
+<div class="mimo-badge">Powered by Xiaomi MiMo v2.5-pro</div>
+<h1>Visual AI Agent<br><span class="gradient">Reasoning Pipeline</span> Studio</h1>
+<p>Design, debug, and deploy multi-step AI reasoning chains with a visual canvas. Each node is a MiMo-powered reasoning step with real-time execution visualization.</p>
+<div class="hero-btns">
+<button class="btn btn-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Launch Studio</button>
+<a href="https://github.com/dovilo/CortexFlow" class="btn btn-secondary">View on GitHub</a>
+</div>
+</div>
+</section>
+
+<!-- LIVE CANVAS DEMO -->
+<section class="canvas-section" id="demo">
+<div class="container">
+<h2 class="reveal">Live Pipeline Canvas</h2>
+<p class="subtitle reveal">Watch reasoning flow through the pipeline in real-time</p>
+<div class="canvas-container reveal">
+<canvas id="pipelineCanvas"></canvas>
+</div>
+<div class="canvas-controls reveal">
+<button class="ctrl-btn active" onclick="toggleExecution(this)"><span class="dot dot-green"></span> Run Pipeline</button>
+<button class="ctrl-btn" onclick="addRandomNode(this)"><span class="dot dot-orange"></span> + Add Node</button>
+<button class="ctrl-btn" onclick="resetCanvas(this)"><span class="dot dot-red"></span> Reset</button>
+<button class="ctrl-btn" onclick="toggleSpeed(this)">⚡ Speed: 1x</button>
+</div>
+</div>
+</section>
+
+<!-- STATS -->
+<section class="container">
+<div class="stats-bar">
+<div class="stat reveal"><div class="num" data-target="8">0</div><div class="label">Node Types</div></div>
+<div class="stat reveal"><div class="num" data-target="12">0</div><div class="label">Built-in Tools</div></div>
+<div class="stat reveal"><div class="num" data-target="50">0</div><div class="label">ms Avg Latency</div></div>
+<div class="stat reveal"><div class="num" data-target="99">0</div><div class="label">% Uptime SLA</div></div>
+</div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+<div class="container">
+<h2 class="reveal">Why CortexFlow?</h2>
+<p class="subtitle reveal">Everything you need to build production-grade reasoning pipelines</p>
+<div class="feature-grid">
+<div class="feature reveal">
+<div class="feature-icon" style="background:rgba(124,58,237,.15)">🧠</div>
+<h3>Visual Pipeline Editor</h3>
+<p>Drag-and-drop nodes to build complex reasoning chains. Connect inputs, outputs, and conditional branches visually — no code required.</p>
+</div>
+<div class="feature reveal">
+<div class="feature-icon" style="background:rgba(6,182,212,.15)">⚡</div>
+<h3>Real-Time Debug Console</h3>
+<p>Watch tokens flow through each node in real-time. Inspect intermediate reasoning, spot bottlenecks, and trace decision paths live.</p>
+</div>
+<div class="feature reveal">
+<div class="feature-icon" style="background:rgba(16,185,129,.15)">🔄</div>
+<h3>Conditional Branching</h3>
+<p>Route execution based on MiMo's reasoning output. Gate nodes evaluate conditions and dynamically direct flow to different paths.</p>
+</div>
+<div class="feature reveal">
+<div class="feature-icon" style="background:rgba(245,158,11,.15)">🧩</div>
+<h3>Memory Injection</h3>
+<p>Persistent memory nodes store and retrieve context across pipeline runs. Build agents that learn and improve over time.</p>
+</div>
+<div class="feature reveal">
+<div class="feature-icon" style="background:rgba(236,72,153,.15)">🔗</div>
+<h3>Tool Integration</h3>
+<p>Connect external APIs, web scrapers, databases, and blockchain RPCs as tool nodes. Compose reasoning with real-world actions.</p>
+</div>
+<div class="feature reveal">
+<div class="feature-icon" style="background:rgba(59,130,246,.15)">📊</div>
+<h3>Execution Analytics</h3>
+<p>Track token usage, latency per node, success rates, and cost. Optimize your pipelines with data-driven insights.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- NODE TYPES -->
+<section class="node-types" id="nodes">
+<div class="container">
+<h2 class="reveal">8 Node Types</h2>
+<p class="subtitle reveal">Every building block you need for sophisticated reasoning</p>
+<div class="node-showcase reveal">
+<div class="node-card"><div class="icon">📥</div><h4>Input</h4><p>Raw data ingestion</p></div>
+<div class="node-card"><div class="icon">🧠</div><h4>Reason</h4><p>MiMo chain-of-thought</p></div>
+<div class="node-card"><div class="icon">🔧</div><h4>Tool</h4><p>External API calls</p></div>
+<div class="node-card"><div class="icon">🔀</div><h4>Gate</h4><p>Conditional routing</p></div>
+<div class="node-card"><div class="icon">💾</div><h4>Memory</h4><p>Context persistence</p></div>
+<div class="node-card"><div class="icon">🔄</div><h4>Transform</h4><p>Data reshaping</p></div>
+<div class="node-card"><div class="icon">📤</div><h4>Output</h4><p>Result delivery</p></div>
+<div class="node-card"><div class="icon">🤖</div><h4>Sub-Agent</h4><p>Nested pipelines</p></div>
+</div>
+</div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section class="arch" id="architecture">
+<div class="container">
+<h2 class="reveal">Architecture</h2>
+<div class="arch-diagram reveal">
+┌─────────────────────────────────────────────────────┐
+│                  CortexFlow Engine                   │
+├─────────────┬─────────────┬─────────────────────────┤
+│  Canvas UI  │  Runtime    │  MiMo v2.5-pro          │
+│  (React)    │  Executor   │  Reasoning Engine        │
+├─────────────┼─────────────┼─────────────────────────┤
+│             │             │                         │
+│  ┌───┐      │  Scheduler  │  ┌───────────────────┐  │
+│  │ 📥│──────┼──►          │  │ Chain-of-Thought  │  │
+│  └─┬─┘      │             │  │ Reasoning per Node │  │
+│    │        │  Token      │  └───────────────────┘  │
+│  ┌─▼─┐      │  Router     │                         │
+│  │ 🧠│──────┼──►          │  ┌───────────────────┐  │
+│  └─┬─┘      │             │  │ JSON Mode Output   │  │
+│    │        │  State      │  │ Structured Results │  │
+│  ┌─▼─┐      │  Manager    │  └───────────────────┘  │
+│  │ 🔀│──────┼──►          │                         │
+│  └┬─┬┘      │             │  ┌───────────────────┐  │
+│   │ │      │  Memory     │  │ 128K Context       │  │
+│ ┌─▼┐ ┌▼─┐  │  Store      │  │ Long-chain Memory  │  │
+│ │📤│ │🔧│  │             │  └───────────────────┘  │
+│ └──┘ └──┘  │             │                         │
+└─────────────┴─────────────┴─────────────────────────┘
+</div>
+</div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison" id="compare">
+<div class="container">
+<h2 class="reveal">How CortexFlow Compares</h2>
+<table class="comp-table reveal">
+<thead>
+<tr><th>Feature</th><th class="highlight">CortexFlow</th><th>LangChain</th><th>AutoGen</th><th>CrewAI</th></tr>
+</thead>
+<tbody>
+<tr><td>Visual Pipeline Editor</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+<tr><td>Real-Time Debug Console</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+<tr><td>Node-Based Architecture</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+<tr><td>Built-in MiMo Reasoning</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+<tr><td>Conditional Branching</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
+<tr><td>Memory Persistence</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+<tr><td>Token Flow Visualization</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+<tr><td>Execution Analytics</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+<tr><td>Zero-Code Setup</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+<div class="container">
+<div class="links">
+<a href="https://github.com/dovilo/CortexFlow">GitHub</a>
+<a href="#demo">Live Demo</a>
+<a href="#features">Features</a>
+<a href="#architecture">Architecture</a>
+</div>
+<div class="copy">CortexFlow — Powered by Xiaomi MiMo v2.5-pro · MIT License · 2026</div>
+</div>
+</footer>
+
+<script>
+// ========== CANVAS PIPELINE VISUALIZATION ==========
+const canvas = document.getElementById('pipelineCanvas');
+const ctx = canvas.getContext('2d');
+let running = true;
+let speed = 1;
+let animFrame;
+let particles = [];
+let nodes = [];
+let connections = [];
+let time = 0;
+
+const COLORS = {
+  input:'#3b82f6',reason:'#7c3aed',tool:'#f59e0b',gate:'#ec4899',
+  memory:'#06b6d4',transform:'#10b981',output:'#ef4444',subagent:'#a78bfa'
+};
+const ICONS = ['📥','🧠','🔧','🔀','💾','🔄','📤','🤖'];
+const NAMES = ['Input','Reason','Tool','Gate','Memory','Transform','Output','Sub-Agent'];
+
+function resizeCanvas(){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.devicePixelRatio||2 > 1 ? rect.width*2 : rect.width;
+  canvas.height = rect.devicePixelRatio||2 > 1 ? rect.height*2 : rect.height;
+  canvas.style.width = rect.width+'px';
+  canvas.style.height = rect.height+'px';
+  ctx.scale(canvas.width/rect.width, canvas.height/rect.height);
+}
+
+function initPipeline(){
+  nodes = [];
+  connections = [];
+  particles = [];
+  const w = canvas.style.width?parseInt(canvas.style.width):canvas.width;
+  const h = canvas.style.height?parseInt(canvas.style.height):canvas.height;
+  
+  const layout = [
+    {type:0,x:0.08,y:0.5},
+    {type:1,x:0.25,y:0.3},
+    {type:1,x:0.25,y:0.7},
+    {type:3,x:0.45,y:0.5},
+    {type:2,x:0.60,y:0.25},
+    {type:4,x:0.60,y:0.75},
+    {type:5,x:0.78,y:0.5},
+    {type:6,x:0.93,y:0.35},
+    {type:7,x:0.93,y:0.65}
+  ];
+  
+  layout.forEach((l,i)=>{
+    nodes.push({
+      id:i,type:l.type,x:l.x*w,y:l.y*h,
+      w:70,h:70,active:false,glow:0,
+      label:NAMES[l.type],icon:ICONS[l.type]
+    });
+  });
+  
+  connections = [
+    [0,1],[0,2],[1,3],[2,3],[3,4],[3,5],[4,6],[5,7],[6,8],[7,8]
+  ];
+}
+
+function drawNode(n){
+  const r = 12;
+  ctx.save();
+  
+  // Glow
+  if(n.glow > 0){
+    ctx.shadowColor = Object.values(COLORS)[n.type];
+    ctx.shadowBlur = n.glow * 20;
+  }
+  
+  // Background
+  ctx.fillStyle = n.active ? 'rgba(124,58,237,0.15)' : '#12121a';
+  ctx.strokeStyle = n.active ? Object.values(COLORS)[n.type] : '#2a2a3e';
+  ctx.lineWidth = n.active ? 2 : 1;
+  
+  ctx.beginPath();
+  ctx.roundRect(n.x-n.w/2,n.y-n.h/2,n.w,n.h,r);
+  ctx.fill();
+  ctx.stroke();
+  
+  ctx.shadowBlur = 0;
+  
+  // Icon
+  ctx.font = '20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(n.icon,n.x,n.y-4);
+  
+  // Label
+  ctx.font = '9px sans-serif';
+  ctx.fillStyle = '#8888aa';
+  ctx.fillText(n.label,n.x,n.y+18);
+  
+  ctx.restore();
+}
+
+function drawConnection(from,to){
+  const n1 = nodes[from], n2 = nodes[to];
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(42,42,62,0.6)';
+  ctx.lineWidth = 1;
+  
+  const mx = (n1.x+n2.x)/2;
+  ctx.moveTo(n1.x+n1.w/2,n1.y);
+  ctx.bezierCurveTo(mx,n1.y,mx,n2.y,n2.x-n2.w/2,n2.y);
+  ctx.stroke();
+}
+
+function spawnParticle(from,to){
+  const n1=nodes[from],n2=nodes[to];
+  const mx=(n1.x+n2.x)/2;
+  particles.push({
+    sx:n1.x+n1.w/2,sy:n1.y,c1x:mx,c1y:n1.y,c2x:mx,c2y:n2.y,
+    ex:n2.x-n2.w/2,ey:n2.y,t:0,color:Object.values(COLORS)[n1.type],
+    speed:(0.008+Math.random()*0.006)*speed
+  });
+}
+
+function drawParticle(p){
+  const t=p.t;
+  const x=(1-t)**3*p.sx+3*(1-t)**2*t*p.c1x+3*(1-t)*t**2*p.c2x+t**3*p.ex;
+  const y=(1-t)**3*p.sy+3*(1-t)**2*t*p.c1y+3*(1-t)*t**2*p.c2y+t**3*p.ey;
+  
+  ctx.beginPath();
+  ctx.arc(x,y,3,0,Math.PI*2);
+  ctx.fillStyle=p.color;
+  ctx.shadowColor=p.color;
+  ctx.shadowBlur=10;
+  ctx.fill();
+  ctx.shadowBlur=0;
+}
+
+function animate(){
+  const w = parseInt(canvas.style.width)||canvas.width;
+  const h = parseInt(canvas.style.height)||canvas.height;
+  ctx.clearRect(0,0,w,h);
+  time++;
+  
+  // Grid dots
+  ctx.fillStyle='rgba(42,42,62,0.3)';
+  for(let gx=0;gx<w;gx+=30){
+    for(let gy=0;gy<h;gy+=30){
+      ctx.beginPath();
+      ctx.arc(gx,gy,0.5,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  
+  // Draw connections
+  connections.forEach(([f,t])=>drawConnection(f,t));
+  
+  // Spawn particles
+  if(running && time%Math.max(8,Math.round(30/speed))===0){
+    const ci = Math.floor(Math.random()*connections.length);
+    spawnParticle(connections[ci][0],connections[ci][1]);
+    
+    // Activate nodes
+    const ci2 = connections[ci];
+    nodes[ci2[0]].active=true;nodes[ci2[0]].glow=1;
+    nodes[ci2[1]].active=true;nodes[ci2[1]].glow=1;
+  }
+  
+  // Update & draw particles
+  particles = particles.filter(p=>{
+    p.t += p.speed;
+    if(p.t<1){drawParticle(p);return true;}
+    return false;
+  });
+  
+  // Decay node glow
+  nodes.forEach(n=>{
+    if(n.glow>0)n.glow-=0.02;
+    if(n.glow<=0){n.glow=0;n.active=false;}
+  });
+  
+  // Draw nodes
+  nodes.forEach(drawNode);
+  
+  animFrame = requestAnimationFrame(animate);
+}
+
+function toggleExecution(btn){
+  running=!running;
+  btn.classList.toggle('active');
+  btn.innerHTML=running?'<span class="dot dot-green"></span> Run Pipeline':'<span class="dot dot-red"></span> Paused';
+}
+
+function addRandomNode(btn){
+  const w=parseInt(canvas.style.width)||canvas.width;
+  const h=parseInt(canvas.style.height)||canvas.height;
+  const type=Math.floor(Math.random()*8);
+  nodes.push({
+    id:nodes.length,type,x:0.15+Math.random()*0.7*w,y:0.15+Math.random()*0.7*h,
+    w:70,h:70,active:true,glow:1,label:NAMES[type],icon:ICONS[type]
+  });
+  if(nodes.length>1){
+    const from=Math.floor(Math.random()*(nodes.length-1));
+    connections.push([from,nodes.length-1]);
+  }
+  btn.style.transform='scale(0.95)';
+  setTimeout(()=>btn.style.transform='',150);
+}
+
+function resetCanvas(){
+  initPipeline();
+}
+
+function toggleSpeed(btn){
+  speed=speed>=4?1:speed*2;
+  btn.innerHTML='⚡ Speed: '+speed+'x';
+}
+
+// Counter animation
+function animateCounters(){
+  document.querySelectorAll('.stat .num').forEach(el=>{
+    const target=+el.dataset.target;
+    let current=0;
+    const step=target/40;
+    const timer=setInterval(()=>{
+      current+=step;
+      if(current>=target){current=target;clearInterval(timer);}
+      el.textContent=Math.round(current);
+    },30);
+  });
+}
+
+// Reveal on scroll
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      if(e.target.querySelector('.num'))animateCounters();
+    }
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// Init
+window.addEventListener('resize',()=>{resizeCanvas();initPipeline();});
+resizeCanvas();
+initPipeline();
+animate();
+
+// RoundRect polyfill
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    if(typeof r==='number')r={tl:r,tr:r,br:r,bl:r};
+    this.moveTo(x+r.tl,y);
+    this.lineTo(x+w-r.tr,y);
+    this.quadraticCurveTo(x+w,y,x+w,y+r.tr);
+    this.lineTo(x+w,y+h-r.br);
+    this.quadraticCurveTo(x+w,y+h,x+w-r.br,y+h);
+    this.lineTo(x+r.bl,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r.bl);
+    this.lineTo(x,y+r.tl);
+    this.quadraticCurveTo(x,y,x+r.tl,y);
+    this.closePath();
+  };
+}
+</script>
+</body>
+</html>
